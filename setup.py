@@ -9,7 +9,11 @@ GITHUB_ORG_URL = "https://github.com/cogniteev"
 ROOT_DIR = os.path.dirname(__file__)
 SOURCE_DIR = os.path.join(ROOT_DIR)
 
-version = '0.1'
+with open('kipavois/__init__.py') as istr:
+    for l in istr:
+        if l.startswith('__version__ ='):
+            exec(l)
+version = '.'.join(map(str, __version__))
 
 setup(
     name=NAME,
