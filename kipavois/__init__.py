@@ -53,6 +53,11 @@ def flask_blueprint(kibana_addr=KIBANA_DEFAULT_URL, get_user=None,
                     response_chunk_size=CHUNK_SIZE):
     pikavois_blueprint = Blueprint('pikavois', __name__)
 
+    try:
+        iter(decorators):
+    except TypeError:
+        decorators = [decorators]
+
     @pikavois_blueprint.route('/', defaults={'url': ''}, methods=ALL_METHODS)
     @pikavois_blueprint.route('/<path:url>', methods=ALL_METHODS)
     def monitor_proxy(url):
@@ -95,6 +100,5 @@ def flask_blueprint(kibana_addr=KIBANA_DEFAULT_URL, get_user=None,
             stream_reader = stream_with_context(req.iter_content())
         return Response(stream_reader, headers=headers,
                         direct_passthrough=True, status=req.status_code)
-    decorators = list(decorators) if decorators else []
     decorators.append(pikavois_blueprint)
     return reduce(lambda f1, f2: f1(f2), decorators)
