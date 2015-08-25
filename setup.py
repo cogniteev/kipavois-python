@@ -17,7 +17,7 @@ setup(
     author="Tristan Carel",
     author_email="tristan@cogniteev.com",
     url= GITHUB_ORG_URL + '/' + REPO_SLUG,
-    download_url="{0}/{1}/tarball/v{2}".format(GITHUB_ORG_URL, REPO_SLUG, version),
+    download_url="{0}/{1}/tarball/{2}".format(GITHUB_ORG_URL, REPO_SLUG, version),
     description="Flask proxy over Kibana with KiPavois",
     long_description=dedent("""
         Rationale
