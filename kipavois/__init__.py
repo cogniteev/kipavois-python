@@ -24,7 +24,7 @@ ALL_METHODS = [
     'DELETE',
     'OPTIONS',
 ]
-__version__ = (0, 1, 1)
+__version__ = (0, 1, 2)
 
 
 def chunked_response_iterator(resp, native_chunk_support, line_based, chunk_size):
