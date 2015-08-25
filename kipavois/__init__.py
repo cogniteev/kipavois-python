@@ -1,11 +1,13 @@
 
 import base64
+import functools
 
 from flask import (
     Blueprint,
     Response,
     request,
     stream_with_context,
+    url_for,
 )
 import requests
 
@@ -49,17 +51,14 @@ def chunked_response_iterator(resp, native_chunk_support, line_based, chunk_size
 
 
 def flask_blueprint(kibana_addr=KIBANA_DEFAULT_URL, get_user=None,
-                    get_referer=None, decorators=None,
+                    get_base_url=None, decorators=None,
                     response_chunk_size=CHUNK_SIZE):
     pikavois_blueprint = Blueprint('pikavois', __name__)
-
     try:
-        iter(decorators):
+        iter(decorators)
     except TypeError:
-        decorators = [decorators]
+        decorators = [decorators] if decorators is not None else []
 
-    @pikavois_blueprint.route('/', defaults={'url': ''}, methods=ALL_METHODS)
-    @pikavois_blueprint.route('/<path:url>', methods=ALL_METHODS)
     def monitor_proxy(url):
         params = dict(request.args.items())
         headers = dict(request.headers.items())
@@ -67,9 +66,11 @@ def flask_blueprint(kibana_addr=KIBANA_DEFAULT_URL, get_user=None,
         if user:
             headers.update({
                 'x-kibana-user': user,
-            })
+        })
+
+        referer = get_base_url() + url_for('pikavois.monitor_proxy') + url
         headers.update({
-            'Referer': get_referer() + '/' + url
+            'Referer': referer
         })
         addr = kibana_addr + '/' + url
         req =requests.request(
@@ -100,5 +101,15 @@ def flask_blueprint(kibana_addr=KIBANA_DEFAULT_URL, get_user=None,
             stream_reader = stream_with_context(req.iter_content())
         return Response(stream_reader, headers=headers,
                         direct_passthrough=True, status=req.status_code)
-    decorators.append(pikavois_blueprint)
-    return reduce(lambda f1, f2: f1(f2), decorators)
+
+    pipeline = [
+        pikavois_blueprint.route('/',
+                          defaults={'url': ''}, methods=ALL_METHODS),
+        pikavois_blueprint.route('/<path:url>',
+                          methods=ALL_METHODS),
+    ]
+    pipeline += decorators
+    pipeline.append(monitor_proxy)
+    # run pipeline, register flask route, ...
+    reduce(lambda f1, f2: f2(f1), reversed(pipeline))
+    return pikavois_blueprint
